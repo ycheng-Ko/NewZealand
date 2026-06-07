@@ -434,13 +434,13 @@ let touchEndX = 0;
 let touchEndY = 0;
 
 detailPage.addEventListener('touchstart', (e) => {
-  touchStartX = e.changedTouches[0].screenX;
-  touchStartY = e.changedTouches[0].screenY;
+  touchStartX = e.changedTouches[0].clientX;
+  touchStartY = e.changedTouches[0].clientY;
 }, { passive: true });
 
 detailPage.addEventListener('touchend', (e) => {
-  touchEndX = e.changedTouches[0].screenX;
-  touchEndY = e.changedTouches[0].screenY;
+  touchEndX = e.changedTouches[0].clientX;
+  touchEndY = e.changedTouches[0].clientY;
   handleSwipeGesture(e);
 }, { passive: true });
 
@@ -448,14 +448,12 @@ function handleSwipeGesture(e) {
   const diffX = touchEndX - touchStartX;
   const diffY = touchEndY - touchStartY;
   
-  // 必須是由左向右滑 (正向)，且水平位移大於 80px，垂直位移小於 50px (防誤觸)
-  // 同時，我們確保沒有在操作地圖 (例如在地圖上平移)
-  const isSwipeRight = diffX > 80 && Math.abs(diffY) < 50;
+  // 必須是由左向右滑 (正向)，且水平位移大於 60px，垂直位移小於 40px (防上下滑動時誤觸)
+  // 同時，為了防範地圖干涉，我們主要偵測「從螢幕左邊邊緣（例如左側 80px 內）開始」的滑動手勢
+  const isSwipeRight = diffX > 60 && Math.abs(diffY) < 40;
+  const startedNearLeftEdge = touchStartX < 90;
   
-  // 檢查觸發滑動的目標，如果是地圖內部，不觸發返回
-  const isMapTouch = document.getElementById('map').contains(e.target);
-  
-  if (isSwipeRight && !isMapTouch && currentDay !== null) {
+  if (isSwipeRight && startedNearLeftEdge && currentDay !== null) {
     switchPage('overview');
   }
 }
