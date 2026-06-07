@@ -427,6 +427,40 @@ document.getElementById('back-to-overview-btn').addEventListener('click', () => 
   switchPage('overview');
 });
 
+// Swipe Back (Left to Right) gesture detection on Detail Page
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+detailPage.addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+detailPage.addEventListener('touchend', (e) => {
+  touchEndX = e.changedTouches[0].screenX;
+  touchEndY = e.changedTouches[0].screenY;
+  handleSwipeGesture(e);
+}, { passive: true });
+
+function handleSwipeGesture(e) {
+  const diffX = touchEndX - touchStartX;
+  const diffY = touchEndY - touchStartY;
+  
+  // 必須是由左向右滑 (正向)，且水平位移大於 80px，垂直位移小於 50px (防誤觸)
+  // 同時，我們確保沒有在操作地圖 (例如在地圖上平移)
+  const isSwipeRight = diffX > 80 && Math.abs(diffY) < 50;
+  
+  // 檢查觸發滑動的目標，如果是地圖內部，不觸發返回
+  const isMapTouch = document.getElementById('map').contains(e.target);
+  
+  if (isSwipeRight && !isMapTouch && currentDay !== null) {
+    switchPage('overview');
+  }
+}
+
+
 // 4. DIALOG EDIT/ADD & FORM HANDLING
 function openEditDialog(dayNum = null) {
   editForm.reset();
@@ -689,4 +723,12 @@ window.addEventListener('DOMContentLoaded', () => {
   loadItinerary();
   initMap();
   switchPage('overview');
+
+  // Bind Brand Header Click to Overview page
+  const brandHeader = document.querySelector('.brand');
+  if (brandHeader) {
+    brandHeader.addEventListener('click', () => {
+      switchPage('overview');
+    });
+  }
 });
