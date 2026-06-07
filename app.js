@@ -402,14 +402,14 @@ function renderDetailPage(dayNum) {
 function switchPage(pageId, dayNum = null) {
   if (pageId === 'overview') {
     currentDay = null;
+    renderOverviewPage();
     detailPage.classList.remove('active');
     overviewPage.classList.add('active');
-    renderOverviewPage();
   } else if (pageId === 'detail' && dayNum !== null) {
     currentDay = Number(dayNum);
+    renderDetailPage(currentDay);
     overviewPage.classList.remove('active');
     detailPage.classList.add('active');
-    renderDetailPage(currentDay);
   }
 
   renderDashboard();
