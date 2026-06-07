@@ -1,0 +1,22 @@
+{
+  "name": "紐西蘭自駕冒險",
+  "short_name": "NZ旅遊",
+  "description": "紐西蘭自駕互動式旅遊行程規劃 Web App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#080c14",
+  "theme_color": "#10b981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
