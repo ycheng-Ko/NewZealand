@@ -4,23 +4,23 @@
  * ------------------------------------------------------------- */
 
 :root {
-  --bg-app: #000000;
-  --bg-workspace: #090a0f;
-  --bg-card: rgba(20, 24, 35, 0.65);
-  --bg-card-hover: rgba(30, 36, 50, 0.85);
-  --bg-border: rgba(255, 255, 255, 0.08);
-  --bg-input-focus: rgba(255, 255, 255, 0.05);
+  --bg-app: #f4efe8;        /* Soft Morandi Milk-tea warm cream */
+  --bg-workspace: #ede6dc;  /* Slightly darker cream */
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-card-hover: rgba(255, 255, 255, 0.9);
+  --bg-border: rgba(180, 170, 155, 0.25);
+  --bg-input-focus: rgba(0, 122, 255, 0.05);
 
-  --primary: #007aff;       /* Apple Blue */
-  --primary-hover: #0063cc;
-  --accent: #34c759;        /* Apple Green */
-  --accent-light: rgba(52, 199, 89, 0.15);
-  --danger: #ff3b30;        /* Apple Red */
-  --danger-light: rgba(255, 59, 48, 0.12);
+  --primary: #5c9df5;       /* Warm Sky Blue */
+  --primary-hover: #4182db;
+  --accent: #89b093;        /* Morandi Green */
+  --accent-light: rgba(137, 176, 147, 0.15);
+  --danger: #d47670;        /* Morandi Coral Red */
+  --danger-light: rgba(212, 118, 112, 0.12);
   
-  --text-primary: #ffffff;
-  --text-secondary: #8e8e93; /* iOS Muted Text */
-  --text-muted: #636366;
+  --text-primary: #3c3730;  /* Soft Warm Charcoal */
+  --text-secondary: #7e7568; /* Warm Muted Brownish Gray */
+  --text-muted: #a3998b;
   
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --border-radius-lg: 18px;
@@ -789,12 +789,12 @@ body {
 /* Leaflet Overrides for premium look */
 .leaflet-bar {
   border: 1px solid var(--bg-border) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   border-radius: 10px !important;
   overflow: hidden;
 }
 .leaflet-bar a {
-  background-color: rgba(20, 24, 35, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
   color: var(--text-primary) !important;
   border-bottom: 1px solid var(--bg-border) !important;
 }
@@ -804,7 +804,7 @@ body {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: rgba(9, 10, 15, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--bg-border);
@@ -816,6 +816,7 @@ body {
   z-index: 9999;
   transform: translateY(150%);
   opacity: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   transition: var(--transition-ios);
 }
 
@@ -854,24 +855,33 @@ body {
 @media (max-width: 1024px) {
   .app-workspace {
     flex-direction: column;
+    height: calc(100vh - 64px);
+    overflow: hidden;
   }
   .workspace-map-panel {
-    height: 40vh;
+    height: 45vh;
+    min-height: 280px;
     flex: none;
     width: 100%;
   }
   .workspace-content-panel {
-    height: 60vh;
-    flex: none;
+    height: 55vh;
+    flex: 1;
     width: 100%;
     border-left: none;
     border-top: 1px solid var(--bg-border);
+    position: relative;
+    overflow: hidden;
   }
 }
 
 @media (max-width: 768px) {
   .app-header {
     padding: 0 1rem;
+    height: 56px;
+  }
+  .app-workspace {
+    height: calc(100vh - 56px);
   }
   .brand-text p {
     display: none;
@@ -884,10 +894,11 @@ body {
     aspect-ratio: 1;
   }
   .workspace-map-panel {
-    height: 35vh;
+    height: 40vh;
+    min-height: 220px;
   }
   .workspace-content-panel {
-    height: calc(65vh - 64px);
+    height: 60vh;
   }
   .app-page {
     padding: 1rem;

@@ -134,13 +134,25 @@ function updateMap() {
       }
 
       if (isNZCoord(item.startCoords)) {
-        L.circleMarker(item.startCoords, {
-          radius: 5,
+        const marker = L.circleMarker(item.startCoords, {
+          radius: 8,
           fillColor: '#ffffff',
-          color: '#007aff',
-          weight: 2,
-          fillOpacity: 1
+          color: '#5c9df5',
+          weight: 2.5,
+          fillOpacity: 1,
+          className: 'map-clickable-marker'
         }).addTo(routeFeatureGroup);
+
+        marker.bindTooltip(`Day ${item.day}: ${item.title}`, {
+          direction: 'top',
+          offset: [0, -5],
+          opacity: 0.9
+        });
+
+        // Click marker on map to go directly to that day's detail page
+        marker.on('click', () => {
+          switchPage('detail', item.day);
+        });
       }
     });
 
@@ -161,7 +173,7 @@ function updateMap() {
 
     if (nzRoutePoints.length >= 2) {
       L.polyline(nzRoutePoints, {
-        color: '#34c759',
+        color: '#89b093', // Morandi green
         weight: 5,
         opacity: 0.9,
         lineJoin: 'round'
@@ -171,7 +183,7 @@ function updateMap() {
     if (isNZCoord(dayItem.startCoords)) {
       L.circleMarker(dayItem.startCoords, {
         radius: 7,
-        fillColor: '#007aff',
+        fillColor: '#5c9df5', // Sky Blue
         color: '#ffffff',
         weight: 2,
         fillOpacity: 1
@@ -181,7 +193,7 @@ function updateMap() {
     if (isNZCoord(dayItem.endCoords)) {
       L.circleMarker(dayItem.endCoords, {
         radius: 8,
-        fillColor: '#ff9500',
+        fillColor: '#e0985c', // Morandi Orange
         color: '#ffffff',
         weight: 2,
         fillOpacity: 1
