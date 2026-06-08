@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>紐西蘭自駕冒險指南 - Interactive RoadTrip Planner</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="專為紐西蘭自駕設計的互動式旅遊指南網頁，支援衛星地圖、每日行程細節規劃、預算與時間追蹤，並支援離線編輯與備份。">
+  <meta name="author" content="Antigravity">
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#10b981">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NZ旅遊">
+  <link rel="apple-touch-icon" href="icon.png?v=12">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=12">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <img src="icon.png?v=12" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+        </div>
+        <div class="brand-text">
+          <h1>紐西蘭自駕冒險</h1>
+          <p>🇳🇿 NZ RoadTrip Planner 2027</p>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="header-actions">
+        <button id="add-day-btn" class="btn btn-primary" title="新增天數">
+          <i class="fa-solid fa-plus"></i> <span>新增一天</span>
+        </button>
+        <button id="export-btn" class="btn btn-secondary" title="匯出行程 (JSON)">
+          <i class="fa-solid fa-download"></i> <span>匯出行程</span>
+        </button>
+        <label for="import-file" class="btn btn-secondary btn-file" title="匯入行程 (JSON)">
+          <i class="fa-solid fa-upload"></i> <span>匯入行程</span>
+          <input type="file" id="import-file" accept=".json" style="display: none;">
+        </label>
+        <button id="reset-btn" class="btn btn-danger-outline" title="恢復預設行程">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-workspace">
+      <!-- Left: Map Section -->
+      <section class="workspace-map-panel">
+        <div class="card map-card">
+          <div id="map"></div>
+          <!-- Map Overlay Control for layers custom UI -->
+          <div class="map-layer-control">
+            <button id="layer-sat-btn" class="layer-btn active" data-layer="satellite">
+              <i class="fa-solid fa-satellite"></i> 衛星圖
+            </button>
+            <button id="layer-street-btn" class="layer-btn" data-layer="street">
+              <i class="fa-solid fa-map"></i> 街道圖
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Content Section -->
+      <section class="workspace-content-panel">
+        
+        <!-- SECTION 1: OVERVIEW PAGE -->
+        <div id="overview-page" class="app-page active">
+          <!-- Statistics / Dashboard -->
+          <div class="dashboard-grid">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">總天數</span>
+                <span id="stat-total-days" class="stat-value">9</span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa-solid fa-route"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">景點解鎖</span>
+                <span id="stat-progress-val" class="stat-value">0 / 0</span>
+              </div>
+              <div class="stat-progress-bar">
+                <div id="stat-progress-fill" class="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+              <div class="stat-info">
+                <span class="stat-label">預計 vs 實際花費</span>
+                <span id="stat-cost-compare" class="stat-value">NZ$ 0 / NZ$ 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Title -->
+          <div class="section-title-bar">
+            <h2><i class="fa-solid fa-list-check"></i> 行程路線總覽</h2>
+            <span class="tip-badge">點選卡片查看每日詳細資訊</span>
+          </div>
+
+          <!-- Itinerary Cards Grid -->
+          <div id="itinerary-list" class="itinerary-cards-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- SECTION 2: DETAIL PAGE -->
+        <div id="detail-page" class="app-page">
+          <!-- Back navigation -->
+          <div class="detail-navigation">
+            <button id="back-to-overview-btn" class="btn-back">
+              <i class="fa-solid fa-arrow-left"></i> 返回總覽
+            </button>
+            <div class="detail-actions">
+              <button id="edit-day-btn" class="btn btn-warning-outline">
+                <i class="fa-solid fa-pen-to-square"></i> 編輯此日
+              </button>
+              <button id="delete-day-btn" class="btn btn-danger-outline">
+                <i class="fa-solid fa-trash-can"></i> 刪除此日
+              </button>
+            </div>
+          </div>
+
+          <!-- Day Title Card -->
+          <div class="day-hero-card card">
+            <div class="day-badge-group">
+              <div class="day-badge">DAY <span id="detail-day-num">1</span></div>
+              <span id="detail-day-date" class="day-date-badge">1/21 (四)</span>
+            </div>
+            <div class="day-hero-info">
+              <h2 id="detail-day-title">基督城 -> 蒂卡波湖</h2>
+              <div class="route-stops-path">
+                <span id="detail-start-loc">基督城</span>
+                <i class="fa-solid fa-chevron-right"></i>
+                <span id="detail-end-loc">蒂卡波湖</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Details Content Grid -->
+          <div class="details-grid-layout">
+            <!-- Left: Attractions & Notes -->
+            <div class="details-col-left">
+              <!-- Attractions Card -->
+              <div class="card info-card">
+                <h3><i class="fa-solid fa-map-pin"></i> 今日踩點行程</h3>
+                <ul id="detail-attractions-list" class="checklist">
+                  <!-- Dynamically populated checkmarks -->
+                </ul>
+              </div>
+
+              <!-- Notes Card -->
+              <div class="card info-card">
+                <h3><i class="fa-solid fa-quote-left"></i> 自駕指南與備註</h3>
+                <div id="detail-notes" class="notes-content">
+                  <!-- Notes text -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Cost & Time Metrics -->
+            <div class="details-col-right">
+              <!-- Time Metric -->
+              <div class="card metric-card">
+                <div class="metric-icon"><i class="fa-solid fa-clock"></i></div>
+                <h3>行車花費時間</h3>
+                <div class="metric-comparison">
+                  <div class="metric-item">
+                    <span class="metric-label">預計時間</span>
+                    <span id="detail-est-time" class="metric-value">3.5 小時</span>
+                  </div>
+                  <div class="metric-divider"></div>
+                  <div class="metric-item">
+                    <span class="metric-label">實際時間</span>
+                    <span id="detail-act-time" class="metric-value">3.5 小時</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cost Metric -->
+              <div class="card metric-card">
+                <div class="metric-icon"><i class="fa-solid fa-tags"></i></div>
+                <h3>花費金額對比</h3>
+                <div class="metric-comparison">
+                  <div class="metric-item">
+                    <span class="metric-label">預計金額</span>
+                    <span id="detail-est-cost" class="metric-value">NZ$ 150</span>
+                  </div>
+                  <div class="metric-divider"></div>
+                  <div class="metric-item">
+                    <span class="metric-label">實際金額</span>
+                    <span id="detail-act-cost" class="metric-value">NZ$ 140</span>
+                  </div>
+                </div>
+                <div id="detail-budget-status" class="budget-status-indicator">
+                  <!-- Status text like "在預算內" or "超支 NZ$ 10" -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- Dialogs -->
+    <!-- Edit/Add Day Dialog with closedby="any" -->
+    <dialog id="edit-dialog" closedby="any" aria-labelledby="dialog-title">
+      <form id="edit-form" class="dialog-form">
+        <header class="dialog-header">
+          <h2 id="dialog-title">編輯行程資訊</h2>
+          <button type="button" class="btn-close" id="dialog-close-btn">&times;</button>
+        </header>
+
+        <div class="dialog-body">
+          <input type="hidden" id="form-day-original" value="">
+          
+          <div class="form-row-grid form-row-3">
+            <div class="form-group">
+              <label for="form-day-num">天數 (Day)</label>
+              <input type="number" id="form-day-num" min="1" required placeholder="例如: 1">
+            </div>
+            <div class="form-group">
+              <label for="form-date">日期</label>
+              <input type="text" id="form-date" placeholder="例如: 1/21 (四)">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label for="form-title">今日標題 / 路線</label>
+              <input type="text" id="form-title" required placeholder="例如: 基督城 -> 蒂卡波湖">
+            </div>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="form-start-loc">出發地</label>
+              <input type="text" id="form-start-loc" required placeholder="例如: 基督城">
+            </div>
+            <div class="form-group">
+              <label for="form-end-loc">目的地</label>
+              <input type="text" id="form-end-loc" required placeholder="例如: 蒂卡波湖">
+            </div>
+          </div>
+
+          <div class="form-section-title">地圖座標點 (非必要，可留空自動估算)</div>
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="form-start-lat">出發地緯度 (Lat)</label>
+              <input type="number" step="any" id="form-start-lat" placeholder="例如: -43.5321">
+            </div>
+            <div class="form-group">
+              <label for="form-start-lng">出發地經度 (Lng)</label>
+              <input type="number" step="any" id="form-start-lng" placeholder="例如: 172.6362">
+            </div>
+          </div>
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="form-end-lat">目的地緯度 (Lat)</label>
+              <input type="number" step="any" id="form-end-lat" placeholder="例如: -44.0047">
+            </div>
+            <div class="form-group">
+              <label for="form-end-lng">目的地經度 (Lng)</label>
+              <input type="number" step="any" id="form-end-lng" placeholder="例如: 170.4771">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-attractions">踩點景點列表 (每行一個景點)</label>
+            <textarea id="form-attractions" rows="3" placeholder="好牧羊人教堂&#10;蒂卡波溫泉&#10;約翰山天文台"></textarea>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="form-est-duration">預計花費時間 (含路程)</label>
+              <input type="text" id="form-est-duration" placeholder="例如: 3.5 小時">
+            </div>
+            <div class="form-group">
+              <label for="form-act-duration">實際花費時間 (含路程)</label>
+              <input type="text" id="form-act-duration" placeholder="例如: 3.5 小時">
+            </div>
+          </div>
+
+          <div class="form-row-grid">
+            <div class="form-group">
+              <label for="form-est-cost">預計花費金額 (NZ$)</label>
+              <input type="number" id="form-est-cost" min="0" placeholder="例如: 150">
+            </div>
+            <div class="form-group">
+              <label for="form-act-cost">實際花費金額 (NZ$)</label>
+              <input type="number" id="form-act-cost" min="0" placeholder="例如: 140">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="form-notes">自駕備註與路況說明</label>
+            <textarea id="form-notes" rows="3" placeholder="路況良好，注意左側行駛..."></textarea>
+          </div>
+        </div>
+
+        <footer class="dialog-footer">
+          <button type="button" class="btn btn-secondary-outline" id="dialog-cancel-btn">取消</button>
+          <button type="submit" class="btn btn-primary" id="dialog-save-btn">保存更新</button>
+        </footer>
+      </form>
+    </dialog>
+  </div>
+
+  <!-- PWA Update Notification Toast -->
+  <div id="pwa-update-toast" class="pwa-toast">
+    <div class="pwa-toast-content">
+      <i class="fa-solid fa-cloud-arrow-down pwa-toast-icon"></i>
+      <div class="pwa-toast-text">
+        <h4>發現新版本！</h4>
+        <p>行程工具已更新，立即載入最新功能。</p>
+      </div>
+    </div>
+    <button id="pwa-update-btn" class="btn btn-primary btn-sm">立即更新</button>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Default Data & App JS -->
+  <script src="data.js?v=12"></script>
+  <script src="app.js?v=12"></script>
+  
+  <!-- Register Service Worker & Handle Updates -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        let newWorker;
+        const toast = document.getElementById('pwa-update-toast');
+        const updateBtn = document.getElementById('pwa-update-btn');
+
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => {
+            console.log('SW registered:', reg.scope);
+            
+            // 強制 iOS 立即向伺服器確認 sw.js 是否有更新
+            reg.update();
+            // 每 15 秒背景輪詢檢查一次更新 (適合自駕測試)
+            setInterval(() => {
+              reg.update();
+            }, 15000);
+
+            // 監聽是否有新版本在等待生效
+            reg.addEventListener('updatefound', () => {
+              newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // 顯示新版本提示 Toast
+                  toast.classList.add('show');
+                }
+              });
+            });
+          })
+          .catch(err => console.log('SW registration failed:', err));
+
+        // 如果目前已有等待中的 SW 且頁面加載了
+        navigator.serviceWorker.ready.then(reg => {
+          if (reg.waiting) {
+            toast.classList.add('show');
+          }
+        });
+
+        // 點擊立即更新按鈕
+        updateBtn.addEventListener('click', () => {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg.waiting) {
+              // 發送訊息給 Service Worker 跳過等待狀態並立即啟用新版
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        // 監聽 Service Worker 啟動新版事件，隨後立即重新整理頁面
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>

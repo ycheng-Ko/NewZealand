@@ -1,0 +1,18 @@
+{
+  "name": "紐西蘭自駕冒險指南",
+  "short_name": "紐西蘭自駕",
+  "description": "紐西蘭南島自駕互動式行程規劃器，支援離線檢視與編輯",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.png?v=12",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
