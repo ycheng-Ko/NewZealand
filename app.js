@@ -73,6 +73,51 @@ let mapLayers = {};
 let activeLayer = 'satellite';
 let routeFeatureGroup;
 
+// Free public OSRM routing helper
+async function fetchDrivingRoute(startCoords, endCoords) {
+  if (!isNZCoord(startCoords) || !isNZCoord(endCoords)) return null;
+  // OSRM expects longitude,latitude format
+  const url = `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+      const geojsonCoords = data.routes[0].geometry.coordinates; // array of [lng, lat]
+      // Convert to [lat, lng] for Leaflet
+      return geojsonCoords.map(coord => [coord[1], coord[0]]);
+    }
+  } catch (e) {
+    console.error("Failed to fetch driving route from OSRM:", e);
+  }
+  return null;
+}
+
+// Background utility to populate actual driving routes on startup
+async function populateMissingDrivingRoutes() {
+  let updated = false;
+  for (let i = 0; i < itinerary.length; i++) {
+    const item = itinerary[i];
+    // Check if both coordinates are in NZ, they are not equal, and routeCoords is short (straight line)
+    if (isNZCoord(item.startCoords) && isNZCoord(item.endCoords) && 
+        (item.startCoords[0] !== item.endCoords[0] || item.startCoords[1] !== item.endCoords[1]) &&
+        (!item.routeCoords || item.routeCoords.length <= 2)) {
+      const route = await fetchDrivingRoute(item.startCoords, item.endCoords);
+      if (route) {
+        item.routeCoords = route;
+        updated = true;
+        // Delay to prevent rate-limiting on open source routing servers
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  }
+  if (updated) {
+    saveItinerary();
+    if (map) {
+      updateMap();
+    }
+  }
+}
+
 function initMap() {
   map = L.map('map', {
     center: [-44.2000, 171.2000],
@@ -80,15 +125,17 @@ function initMap() {
     zoomControl: true
   });
 
-  // Google Hybrid Satellite Layer (Satellite imagery + Labels/Roads overlay)
-  mapLayers.satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+  // Google Hybrid Satellite Layer (Satellite imagery + Labels/Roads overlay, sharp retina tiles)
+  mapLayers.satellite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&scale=2', {
     maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
     attribution: '&copy; Google Maps'
   });
 
-  // Google Standard RoadMap Layer
-  mapLayers.street = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+  // Google Standard RoadMap Layer (Sharp retina tiles)
+  mapLayers.street = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&scale=2', {
     maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
     attribution: '&copy; Google Maps'
   });
 
@@ -428,8 +475,7 @@ function setupInlineChangeHandlers() {
   detailNotesInput.addEventListener('change', () => saveField('notes', () => detailNotesInput.value));
 }
 
-// If locations are changed, automatically mock coords if not in NZ range
-function syncMapPoints() {
+async function syncMapPoints() {
   const dayItem = itinerary.find(d => d.day === currentDay);
   if (!dayItem) return;
   // If user changed names, default coords
@@ -439,7 +485,9 @@ function syncMapPoints() {
   if (!isNZCoord(dayItem.endCoords)) {
     dayItem.endCoords = [-44.0047, 170.4771]; // Tekapo
   }
-  dayItem.routeCoords = [dayItem.startCoords, dayItem.endCoords];
+  
+  const route = await fetchDrivingRoute(dayItem.startCoords, dayItem.endCoords);
+  dayItem.routeCoords = route ? route : [dayItem.startCoords, dayItem.endCoords];
   saveItinerary();
   updateMap();
 }
@@ -605,6 +653,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initMap();
   setupInlineChangeHandlers();
   switchPage('overview');
+  populateMissingDrivingRoutes();
 
   // Force Leaflet to resize correctly on rotating screen (Portrait/Landscape toggle)
   window.addEventListener('resize', () => {
