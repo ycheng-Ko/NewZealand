@@ -73,11 +73,15 @@ let mapLayers = {};
 let activeLayer = 'satellite';
 let routeFeatureGroup;
 
-// Free public OSRM routing helper
-async function fetchDrivingRoute(startCoords, endCoords) {
-  if (!isNZCoord(startCoords) || !isNZCoord(endCoords)) return null;
+// Free public OSRM routing helper (supports passing multiple waypoints)
+async function fetchDrivingRoute(coordsArray) {
+  if (!coordsArray || coordsArray.length < 2) return null;
+  const validCoords = coordsArray.filter(c => isNZCoord(c));
+  if (validCoords.length < 2) return null;
+  
   // OSRM expects longitude,latitude format
-  const url = `https://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=full&geometries=geojson`;
+  const coordString = validCoords.map(c => `${c[1]},${c[0]}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
   try {
     const res = await fetch(url);
     const data = await res.json();
@@ -97,11 +101,13 @@ async function populateMissingDrivingRoutes() {
   let updated = false;
   for (let i = 0; i < itinerary.length; i++) {
     const item = itinerary[i];
-    // Check if both coordinates are in NZ, they are not equal, and routeCoords is short (straight line)
-    if (isNZCoord(item.startCoords) && isNZCoord(item.endCoords) && 
-        (item.startCoords[0] !== item.endCoords[0] || item.startCoords[1] !== item.endCoords[1]) &&
-        (!item.routeCoords || item.routeCoords.length <= 2)) {
-      const route = await fetchDrivingRoute(item.startCoords, item.endCoords);
+    // Check if we have at least 2 valid coordinates, and routeCoords is short (under 15 points, meaning it's a rough draft)
+    const baseCoords = (item.routeCoords && item.routeCoords.length > 0) ? item.routeCoords : [item.startCoords, item.endCoords];
+    const validNZCoords = baseCoords.filter(c => isNZCoord(c));
+    
+    if (validNZCoords.length >= 2 && (!item.routeCoords || item.routeCoords.length < 15)) {
+      console.log(`Busting and fetching high-detail driving route for Day ${item.day}...`);
+      const route = await fetchDrivingRoute(validNZCoords);
       if (route) {
         item.routeCoords = route;
         updated = true;
@@ -486,7 +492,7 @@ async function syncMapPoints() {
     dayItem.endCoords = [-44.0047, 170.4771]; // Tekapo
   }
   
-  const route = await fetchDrivingRoute(dayItem.startCoords, dayItem.endCoords);
+  const route = await fetchDrivingRoute([dayItem.startCoords, dayItem.endCoords]);
   dayItem.routeCoords = route ? route : [dayItem.startCoords, dayItem.endCoords];
   saveItinerary();
   updateMap();

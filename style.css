@@ -52,12 +52,22 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100%;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Apple Header */
 .app-header {
-  height: 64px;
+  min-height: 64px;
+  height: calc(64px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  box-sizing: border-box;
   background: rgba(9, 10, 15, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -65,7 +75,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
   z-index: 100;
 }
 
@@ -148,11 +159,10 @@ body {
   color: white;
 }
 
-/* App Workspace Grid */
 .app-workspace {
   display: flex;
   flex: 1;
-  height: calc(100vh - 64px);
+  min-height: 0;
   overflow: hidden;
   background-color: var(--bg-workspace);
 }
@@ -855,8 +865,6 @@ body {
 @media (orientation: landscape) {
   .app-workspace {
     flex-direction: row;
-    height: calc(100vh - 64px);
-    overflow: hidden;
   }
   .workspace-map-panel {
     flex: 1.2;
@@ -876,8 +884,6 @@ body {
 @media (orientation: portrait) {
   .app-workspace {
     flex-direction: column;
-    height: calc(100vh - 64px);
-    overflow: hidden;
   }
   .workspace-map-panel {
     height: 38vh;
@@ -897,13 +903,11 @@ body {
 /* 3. Small Screens Specific Adjustments (Mobile Phones) */
 @media (max-width: 768px) {
   .app-header {
-    padding: 0 1rem;
-    height: 56px;
-  }
-  
-  /* Adjust workspace height relative to smaller header */
-  .app-workspace {
-    height: calc(100vh - 56px);
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    min-height: 52px;
+    height: calc(52px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
   }
 
   .brand-text p {
