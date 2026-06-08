@@ -1,12 +1,12 @@
-const CACHE_NAME = 'nz-roadtrip-v16';
+const CACHE_NAME = 'nz-roadtrip-v18';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=16',
-  './data.js?v=16',
-  './app.js?v=16',
+  './style.css?v=18',
+  './data.js?v=18',
+  './app.js?v=18',
   './manifest.json',
-  './icon.png?v=16',
+  './icon.png?v=18',
   // 快取 Leaflet 的 CDN 資源，這樣離線時地圖 JS/CSS 也能載入
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
@@ -56,7 +56,12 @@ self.addEventListener('fetch', (e) => {
 
       // 若快取無此資源，則去網路下載並快取它（這會自動把瀏覽過的地圖圖磚存下來）
       return fetch(e.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' && !e.request.url.includes('tile') && !e.request.url.includes('openstreetmap') && !e.request.url.includes('arcgisonline')) {
+        if (!networkResponse || networkResponse.status !== 200 || 
+            networkResponse.type !== 'basic' && 
+            !e.request.url.includes('tile') && 
+            !e.request.url.includes('openstreetmap') && 
+            !e.request.url.includes('arcgisonline') &&
+            !e.request.url.includes('google')) {
           return networkResponse;
         }
         
@@ -68,7 +73,7 @@ self.addEventListener('fetch', (e) => {
         return networkResponse;
       }).catch(() => {
         // 如果地圖圖磚讀取失敗且無快取，回傳一個友好的離線提示或空回應
-        if (e.request.url.includes('tile')) {
+        if (e.request.url.includes('tile') || e.request.url.includes('google')) {
           return new Response('', { status: 404, statusText: 'Offline' });
         }
       });

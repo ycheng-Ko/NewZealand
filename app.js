@@ -80,14 +80,16 @@ function initMap() {
     zoomControl: true
   });
 
-  mapLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: 'Tiles &copy; Esri'
+  // Google Hybrid Satellite Layer (Satellite imagery + Labels/Roads overlay)
+  mapLayers.satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
   });
 
-  mapLayers.street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
+  // Google Standard RoadMap Layer
+  mapLayers.street = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
   });
 
   mapLayers.satellite.addTo(map);
