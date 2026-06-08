@@ -1092,8 +1092,94 @@ dialog.\:popover-open::backdrop {
     width: 100%;
     justify-content: space-between;
   }
-
   .app-page {
     padding: 1rem;
   }
 }
+
+/* PWA Update Toast Style (Glassmorphism + Slide Animation) */
+.pwa-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.15);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  z-index: 9999;
+  transform: translateY(150%) scale(0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.35s ease, 
+              visibility 0.35s;
+}
+
+.pwa-toast.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  visibility: visible;
+}
+
+.pwa-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.pwa-toast-icon {
+  font-size: 1.5rem;
+  color: var(--primary);
+  animation: floatBounce 2s infinite ease-in-out;
+}
+
+.pwa-toast-text h4 {
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.pwa-toast-text p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  border-radius: 8px;
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Responsive adjustment for Mobile PWA Toast */
+@media (max-width: 600px) {
+  .pwa-toast {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .pwa-toast-content {
+    justify-content: center;
+  }
+  .pwa-toast-text {
+    text-align: left;
+  }
+}
+

@@ -1,12 +1,12 @@
-const CACHE_NAME = 'nz-roadtrip-v8';
+const CACHE_NAME = 'nz-roadtrip-v9';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=8',
-  './data.js?v=8',
-  './app.js?v=8',
+  './style.css?v=9',
+  './data.js?v=9',
+  './app.js?v=9',
   './manifest.json',
-  './icon.png?v=8',
+  './icon.png?v=9',
   // 快取 Leaflet 的 CDN 資源，這樣離線時地圖 JS/CSS 也能載入
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
@@ -75,3 +75,11 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
+// 監聽來自前台的更新控制訊息
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
