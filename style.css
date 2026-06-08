@@ -846,61 +846,94 @@ body {
   color: var(--text-secondary);
 }
 
-/* Tablet & Landscape Layout */
-@media (min-width: 1025px) {
-  /* Side by side workspace */
+/* -------------------------------------------------------------
+ * RESPONSIVE & ADAPTIVE LAYOUT (Cupertino Guidelines)
+ * Supports Macbook, iPad Pro, iPad, and iPhone in both Portrait & Landscape
+ * ------------------------------------------------------------- */
+
+/* 1. Universal Landscape Orientation (Side-by-Side Split View) */
+@media (orientation: landscape) {
+  .app-workspace {
+    flex-direction: row;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+  }
+  .workspace-map-panel {
+    flex: 1.2;
+    height: 100%;
+    width: auto;
+  }
+  .workspace-content-panel {
+    flex: 0.8;
+    height: 100%;
+    width: auto;
+    border-left: 1px solid var(--bg-border);
+    border-top: none;
+  }
 }
 
-/* Adaptive mobile layout */
-@media (max-width: 1024px) {
+/* 2. Universal Portrait Orientation (Top Map, Bottom Content) */
+@media (orientation: portrait) {
   .app-workspace {
     flex-direction: column;
     height: calc(100vh - 64px);
     overflow: hidden;
   }
   .workspace-map-panel {
-    height: 45vh;
-    min-height: 280px;
-    flex: none;
+    height: 38vh;
+    min-height: 240px;
     width: 100%;
+    flex: none;
   }
   .workspace-content-panel {
-    height: 55vh;
+    height: 62vh;
     flex: 1;
     width: 100%;
     border-left: none;
     border-top: 1px solid var(--bg-border);
-    position: relative;
-    overflow: hidden;
   }
 }
 
+/* 3. Small Screens Specific Adjustments (Mobile Phones) */
 @media (max-width: 768px) {
   .app-header {
     padding: 0 1rem;
     height: 56px;
   }
+  
+  /* Adjust workspace height relative to smaller header */
   .app-workspace {
     height: calc(100vh - 56px);
   }
+
   .brand-text p {
-    display: none;
+    display: none; /* Hide year subtitle */
   }
+
   .header-actions span {
-    display: none;
+    display: none; /* Icon-only headers on mobile */
   }
-  .header-actions button {
+
+  .header-actions button, 
+  .header-actions label.btn-file {
     padding: 0.5rem;
     aspect-ratio: 1;
+    border-radius: 10px;
   }
-  .workspace-map-panel {
-    height: 40vh;
-    min-height: 220px;
-  }
-  .workspace-content-panel {
-    height: 60vh;
-  }
+
   .app-page {
     padding: 1rem;
   }
+
+  /* Adjust portrait ratio slightly on small phones */
+  @media (orientation: portrait) {
+    .workspace-map-panel {
+      height: 32vh;
+      min-height: 200px;
+    }
+    .workspace-content-panel {
+      height: 68vh;
+    }
+  }
 }
+

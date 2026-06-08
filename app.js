@@ -603,4 +603,21 @@ window.addEventListener('DOMContentLoaded', () => {
   initMap();
   setupInlineChangeHandlers();
   switchPage('overview');
+
+  // Force Leaflet to resize correctly on rotating screen (Portrait/Landscape toggle)
+  window.addEventListener('resize', () => {
+    if (map) {
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+    }
+  });
+
+  window.addEventListener('orientationchange', () => {
+    if (map) {
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 300);
+    }
+  });
 });
