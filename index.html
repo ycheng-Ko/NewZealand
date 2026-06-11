@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="紐西蘭自駕">
-  <link rel="apple-touch-icon" href="icon.png?v=26">
+  <link rel="apple-touch-icon" href="icon.png?v=27">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,22 +22,25 @@
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <link rel="stylesheet" href="style.css?v=26">
+  <link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
         <div class="logo-icon">
-          <img src="icon.png?v=26" alt="Logo">
+          <img src="icon.png?v=27" alt="Logo">
         </div>
         <div class="brand-text">
-          <h1>紐西蘭自駕冒險 <span class="version-tag">.v26</span></h1>
+          <h1>紐西蘭自駕冒險 <span class="version-tag">.v27</span></h1>
           <p>🇳🇿 NZ RoadTrip Planner 2027</p>
         </div>
       </div>
       
       <div class="header-actions">
+        <button id="check-update-btn" class="ios-btn ios-btn-secondary" title="檢查與下載更新">
+          <i class="fa-solid fa-arrows-rotate"></i> <span>檢查更新</span>
+        </button>
         <button id="add-day-btn" class="ios-btn ios-btn-primary" title="新增天數">
           <i class="fa-solid fa-plus"></i> <span>新增一天</span>
         </button>
@@ -201,8 +204,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="data.js?v=26"></script>
-  <script src="app.js?v=26"></script>
+  <script src="data.js?v=27"></script>
+  <script src="app.js?v=27"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
@@ -210,23 +213,57 @@
         let newWorker;
         const toast = document.getElementById('pwa-update-toast');
         const updateBtn = document.getElementById('pwa-update-btn');
+        const checkUpdateBtn = document.getElementById('check-update-btn');
+        const checkUpdateText = checkUpdateBtn.querySelector('span');
 
-        navigator.serviceWorker.register('./sw.js?v=26')
+        navigator.serviceWorker.register('./sw.js?v=27')
           .then(reg => {
-            reg.update();
-            setInterval(() => { reg.update(); }, 15000);
+            // Do NOT update automatically on load
+            
             reg.addEventListener('updatefound', () => {
               newWorker = reg.installing;
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   toast.classList.add('show');
+                  if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+                  checkUpdateBtn.style.color = 'var(--primary)';
                 }
+              });
+            });
+
+            checkUpdateBtn.addEventListener('click', () => {
+              if (checkUpdateText) checkUpdateText.textContent = '檢查中...';
+              
+              reg.update().then(() => {
+                setTimeout(() => {
+                  if (reg.installing) {
+                    if (checkUpdateText) checkUpdateText.textContent = '下載中...';
+                  } else if (reg.waiting) {
+                    toast.classList.add('show');
+                    if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+                    checkUpdateBtn.style.color = 'var(--primary)';
+                  } else {
+                    if (checkUpdateText) checkUpdateText.textContent = '已是最新';
+                    setTimeout(() => {
+                      if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
+                    }, 2000);
+                  }
+                }, 1000);
+              }).catch(err => {
+                console.error("Update check failed:", err);
+                if (checkUpdateText) checkUpdateText.textContent = '檢查失敗';
+                setTimeout(() => {
+                  if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
+                }, 2000);
               });
             });
           });
 
         navigator.serviceWorker.ready.then(reg => {
-          if (reg.waiting) toast.classList.add('show');
+          if (reg.waiting) {
+            toast.classList.add('show');
+            if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+          }
         });
 
         updateBtn.addEventListener('click', () => {
