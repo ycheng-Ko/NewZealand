@@ -68,7 +68,7 @@ body {
   height: calc(64px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   box-sizing: border-box;
-  background: rgba(9, 10, 15, 0.8);
+  background: rgba(244, 239, 232, 0.85); /* Light Morandi Cream frosted glass */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--bg-border);
@@ -85,7 +85,20 @@ body {
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
+  height: 100%;
 }
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 
 .logo-icon img {
   width: 38px;
@@ -149,11 +162,11 @@ body {
 }
 
 .ios-btn-secondary {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.05); /* Darker overlay for high contrast on light header */
   color: var(--text-primary);
 }
 .ios-btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .ios-btn-danger-icon {
