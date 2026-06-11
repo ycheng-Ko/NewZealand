@@ -653,6 +653,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     localStorage.removeItem('nz_roadtrip_itinerary');
     loadItinerary();
     switchPage('overview');
+    populateMissingDrivingRoutes();
   }
 });
 
@@ -681,6 +682,7 @@ document.getElementById('import-file').addEventListener('change', (e) => {
         sortItinerary();
         saveItinerary();
         switchPage('overview');
+        populateMissingDrivingRoutes();
         alert("行程匯入成功！");
       } else {
         alert("錯誤：匯入的資料格式不符。");
