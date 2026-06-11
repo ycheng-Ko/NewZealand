@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="紐西蘭自駕">
-  <link rel="apple-touch-icon" href="icon.png?v=30">
+  <link rel="apple-touch-icon" href="icon.png?v=31">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,17 +22,17 @@
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
         <div class="logo-icon">
-          <img src="icon.png?v=30" alt="Logo">
+          <img src="icon.png?v=31" alt="Logo">
         </div>
         <div class="brand-text">
-          <h1>紐西蘭自駕冒險 <span class="version-tag">.v30</span></h1>
+          <h1>紐西蘭自駕冒險 <span class="version-tag">.v31</span></h1>
           <p>🇳🇿 NZ RoadTrip Planner 2027</p>
         </div>
       </div>
@@ -47,10 +47,10 @@
         <button id="reset-btn" class="ios-btn ios-btn-secondary" title="還原預設">
           <i class="fa-solid fa-rotate-left"></i>
         </button>
-
-        <label for="import-file" class="ios-btn ios-btn-secondary btn-file" title="匯入 JSON">
-          <i class="fa-solid fa-arrow-down-to-bracket"></i>
-          <input type="file" id="import-file" accept=".json" style="display: none;">
+ 
+        <label for="import-file" class="ios-btn ios-btn-secondary btn-file" title="匯入行程 (JSON 或文字檔)">
+          <i class="fa-solid fa-arrow-down-to-bracket"></i> <span>匯入行程</span>
+          <input type="file" id="import-file" accept=".json,.txt" style="display: none;">
         </label>
       </div>
     </header>
@@ -210,8 +210,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="data.js?v=30"></script>
-  <script src="app.js?v=30"></script>
+  <script src="data.js?v=31"></script>
+  <script src="app.js?v=31"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
@@ -222,8 +222,8 @@
         const cancelBtn = document.getElementById('pwa-cancel-btn');
         const checkUpdateBtn = document.getElementById('check-update-btn');
         const checkUpdateText = checkUpdateBtn.querySelector('span');
-
-        navigator.serviceWorker.register('./sw.js?v=30')
+ 
+        navigator.serviceWorker.register('./sw.js?v=31')
           .then(reg => {
             // Do NOT update automatically on load
             
@@ -243,7 +243,7 @@
                 }
               });
             });
-
+ 
             checkUpdateBtn.addEventListener('click', () => {
               if (checkUpdateText) checkUpdateText.textContent = '檢查中...';
               
@@ -252,7 +252,7 @@
                 .then(res => res.json())
                 .then(verData => {
                   const latestVer = Number(verData.version) || 0;
-                  const currentVer = 29; // Hardcoded current version to detect latestVer (30)
+                  const currentVer = 30; // Hardcoded current version to detect latestVer (31)
                   
                   if (latestVer > currentVer) {
                     document.getElementById('pwa-update-notes').innerHTML = `<strong>版本 v${verData.version} 更新內容：</strong><br>${verData.notes}`;

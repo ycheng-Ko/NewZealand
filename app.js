@@ -686,27 +686,257 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
 
 
-// Import JSON
+// Coordinate Mapping Dictionary for common locations in NZ to avoid geocoder rate limits
+const KNOWN_COORDS = {
+  "桃園機場": [25.0797, 121.2342],
+  "桃園機場報到": [25.0797, 121.2342],
+  "台灣桃園機場": [25.0797, 121.2342],
+  "台北": [25.0797, 121.2342],
+  "台灣": [25.0797, 121.2342],
+  "飛行中": [25.0797, 121.2342],
+  "飛機": [25.0797, 121.2342],
+  "搭飛機": [25.0797, 121.2342],
+  "搭飛機出發": [25.0797, 121.2342],
+  "基督城": [-43.5321, 172.6362],
+  "基督城機場": [-43.4894, 172.5322],
+  "基督城市區": [-43.5321, 172.6362],
+  "蒂卡波湖": [-44.0047, 170.4771],
+  "好牧羊人教堂": [-44.0047, 170.4771],
+  "庫克山": [-43.7342, 170.1030],
+  "庫克山村": [-43.7342, 170.1030],
+  "普卡基湖": [-44.1751, 170.1557],
+  "瓦納卡": [-44.6934, 169.1413],
+  "克倫威爾": [-45.0389, 169.1960],
+  "皇后鎮": [-45.0312, 168.6626],
+  "蒂阿瑙": [-45.4144, 167.7176],
+  "米佛峽灣": [-44.6716, 167.9255],
+  "但尼丁": [-45.8788, 170.5028],
+  "奧馬魯": [-45.1000, 170.9667],
+  "抵達台灣": [25.0797, 121.2342]
+};
+
+function findKnownCoords(locName) {
+  if (!locName) return null;
+  const clean = locName.trim();
+  if (KNOWN_COORDS[clean]) return KNOWN_COORDS[clean];
+  for (const key of Object.keys(KNOWN_COORDS)) {
+    if (clean.includes(key) || key.includes(clean)) {
+      return KNOWN_COORDS[key];
+    }
+  }
+  return null;
+}
+
+function splitBySegments(str) {
+  const segments = [];
+  let current = "";
+  let parenDepth = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '(' || char === '（') {
+      parenDepth++;
+      current += char;
+    } else if (char === ')' || char === '）') {
+      parenDepth--;
+      current += char;
+    } else if (parenDepth === 0 && (char === '-' || char === '→' || char === '至')) {
+      if (current.trim()) {
+        segments.push(current.trim());
+      }
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) {
+    segments.push(current.trim());
+  }
+  return segments;
+}
+
+function parseSegment(segment) {
+  const parenRegex = /[\(（]([^\)）]+)[\)）]/;
+  const match = segment.match(parenRegex);
+  let location = segment;
+  let detailText = "";
+  if (match) {
+    location = segment.replace(parenRegex, "").trim();
+    detailText = match[1].trim();
+  }
+  return {
+    location: location.trim(),
+    detailText: detailText
+  };
+}
+
+function splitDetails(text) {
+  if (!text) return [];
+  return text.split(/[,，、;；]/).map(t => t.trim()).filter(Boolean);
+}
+
+async function parsePlaintextItinerary(text) {
+  const lines = text.split(/\r?\n/);
+  const parsedDays = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+
+    const mainRegex = /^[\s\u200b\ufeff]*([0-9\ufe0f\u20e3\ud83d\udd1f]+)[\s]*([0-9]{1,2}\/[0-9]{1,2}(?:\s*[\u4e00-\u9fa5]+)?)[\s]*(.*)$/;
+    const fallbackRegex = /^[\s\u200b\ufeff]*([0-9\ufe0f\u20e3\ud83d\udd1f]+)[\s\.\、]*(.*)$/;
+
+    let match = line.match(mainRegex);
+    let rawDay = "";
+    let rawDate = "";
+    let contentStr = "";
+
+    if (match) {
+      rawDay = match[1];
+      rawDate = match[2];
+      contentStr = match[3];
+    } else {
+      let fMatch = line.match(fallbackRegex);
+      if (fMatch) {
+        rawDay = fMatch[1];
+        contentStr = fMatch[2];
+      } else {
+        continue;
+      }
+    }
+
+    let cleanDayStr = rawDay.replace(/🔟/g, '10');
+    cleanDayStr = cleanDayStr.replace(/[^0-9]/g, '');
+    const dayVal = parseInt(cleanDayStr, 10);
+    if (isNaN(dayVal)) continue;
+
+    let formattedDate = rawDate;
+    if (rawDate) {
+      const dateMatch = rawDate.match(/^([0-9]{1,2}\/[0-9]{1,2})\s*([\u4e00-\u9fa5]+)?$/);
+      if (dateMatch) {
+        const baseDate = dateMatch[1];
+        const weekday = dateMatch[2] ? dateMatch[2].trim() : "";
+        formattedDate = weekday ? `${baseDate} (${weekday})` : baseDate;
+      }
+    }
+
+    const rawSegments = splitBySegments(contentStr);
+    if (rawSegments.length === 0) continue;
+
+    const segments = rawSegments.map(s => parseSegment(s));
+    const startLoc = segments[0].location || "起點";
+    const endLoc = segments[segments.length - 1].location || "終點";
+
+    let startCoords = findKnownCoords(startLoc);
+    if (!startCoords && startLoc !== "起點") {
+      startCoords = await geocodeLocation(startLoc);
+    }
+    if (!startCoords) startCoords = [-43.5321, 172.6362];
+
+    let endCoords = findKnownCoords(endLoc);
+    if (!endCoords && endLoc !== "終點") {
+      endCoords = await geocodeLocation(endLoc);
+    }
+    if (!endCoords) endCoords = startCoords;
+
+    const attractions = [];
+    const addedAttractions = new Set();
+
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      if (i > 0 && i < segments.length - 1 && seg.location) {
+        const attractionName = seg.location;
+        if (!addedAttractions.has(attractionName)) {
+          attractions.push({ name: attractionName, visited: false });
+          addedAttractions.add(attractionName);
+        }
+      }
+
+      if (seg.detailText) {
+        const items = splitDetails(seg.detailText);
+        for (const item of items) {
+          if (!addedAttractions.has(item)) {
+            attractions.push({ name: item, visited: false });
+            addedAttractions.add(item);
+          }
+        }
+      }
+    }
+
+    let title = "";
+    if (segments.length > 1) {
+      title = segments.map(s => s.location).join(" → ");
+    } else {
+      title = segments[0].location;
+      if (line.includes("✈️") || line.includes("飛機")) {
+        title += " ✈️";
+      } else if (line.includes("🏠") || line.includes("台灣") || line.includes("回家")) {
+        title += " 🏠";
+      }
+    }
+
+    parsedDays.push({
+      day: dayVal,
+      date: formattedDate || `Day ${dayVal}`,
+      title: title,
+      startLoc: startLoc,
+      endLoc: endLoc,
+      startCoords: startCoords,
+      endCoords: endCoords,
+      routeCoords: [startCoords, endCoords],
+      attractions: attractions,
+      estDuration: "未設定",
+      actDuration: "",
+      estCost: 0,
+      actCost: 0,
+      notes: line
+    });
+  }
+  return parsedDays;
+}
+
+// Import JSON or Text Draft
 document.getElementById('import-file').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(event) {
+  reader.onload = async function(event) {
+    const content = event.target.result;
+    
+    // 1. Try JSON
+    if (file.name.endsWith('.json')) {
+      try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed) && parsed.every(item => item.day && item.title)) {
+          itinerary = parsed;
+          sortItinerary();
+          saveItinerary();
+          switchPage('overview');
+          populateMissingDrivingRoutes();
+          alert("JSON 行程匯入成功！");
+          return;
+        }
+      } catch (err) {
+        console.log("Not a valid JSON, falling back to plaintext parser...");
+      }
+    }
+
+    // 2. Try Plaintext Parser
     try {
-      const parsed = JSON.parse(event.target.result);
-      if (Array.isArray(parsed) && parsed.every(item => item.day && item.title)) {
+      const parsed = await parsePlaintextItinerary(content);
+      if (parsed && parsed.length > 0) {
         itinerary = parsed;
         sortItinerary();
         saveItinerary();
         switchPage('overview');
-        populateMissingDrivingRoutes();
-        alert("行程匯入成功！");
+        await populateMissingDrivingRoutes();
+        alert("行程草稿匯入成功！已自動解析景點、日期與繪製導航路線。");
       } else {
-        alert("錯誤：匯入的資料格式不符。");
+        alert("錯誤：無法解析行程草稿。請確認檔案格式是否包含 Day 與日期。");
       }
     } catch (err) {
-      alert("讀取失敗，請確認是否為標準 JSON。");
+      console.error(err);
+      alert("讀取失敗，請確認檔案內容與格式。");
     }
   };
   reader.readAsText(file);
