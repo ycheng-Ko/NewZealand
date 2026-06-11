@@ -936,8 +936,14 @@ body {
     padding-top: env(safe-area-inset-top);
   }
 
+  .brand-text h1 {
+    font-size: 0.95rem;
+  }
+
   .brand-text p {
-    display: none; /* Hide year subtitle */
+    font-size: 0.6rem;
+    margin-top: 1px;
+    color: var(--text-secondary);
   }
 
   .header-actions span {
