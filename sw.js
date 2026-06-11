@@ -1,12 +1,12 @@
-const CACHE_NAME = 'nz-roadtrip-v21';
+const CACHE_NAME = 'nz-roadtrip-v22';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=21',
-  './data.js?v=21',
-  './app.js?v=21',
+  './style.css?v=22',
+  './data.js?v=22',
+  './app.js?v=22',
   './manifest.json',
-  './icon.png?v=21',
+  './icon.png?v=22',
   // 快取 Leaflet 的 CDN 資源，這樣離線時地圖 JS/CSS 也能載入
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
