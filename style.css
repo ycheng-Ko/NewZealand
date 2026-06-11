@@ -363,10 +363,47 @@ body {
 .widget-footer-cost {
   font-size: 0.75rem;
   color: var(--text-secondary);
-  text-align: center;
   border-top: 1px solid var(--bg-border);
   padding-top: 0.65rem;
   margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cost-compare-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.currency-segmented-control {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px;
+  border-radius: 8px;
+  display: flex;
+  gap: 2px;
+}
+
+.curr-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition-ios);
+}
+
+.curr-btn.active {
+  background-color: #ffffff;
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .widget-footer-cost strong {

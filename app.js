@@ -5,6 +5,8 @@
 
 let itinerary = [];
 let currentDay = null; // null = Overview, Number = active Day
+const EXCHANGE_RATE = 20; // 1 NZD = 20 TWD
+let currencyMode = localStorage.getItem('nz_currency_mode') || 'NZD';
 
 // DOM Cache
 const overviewPage = document.getElementById('overview-page');
@@ -310,7 +312,11 @@ function renderDashboard() {
   statProgressVal.textContent = `${visitedAttractions} / ${totalAttractions}`;
   const pct = totalAttractions > 0 ? (visitedAttractions / totalAttractions) * 100 : 0;
   statProgressFill.style.width = `${pct}%`;
-  statCostCompare.textContent = `NZ$ ${totalEstCost.toLocaleString()} / NZ$ ${totalActCost.toLocaleString()}`;
+  
+  const displayEstTotal = currencyMode === 'TWD' ? totalEstCost * EXCHANGE_RATE : totalEstCost;
+  const displayActTotal = currencyMode === 'TWD' ? totalActCost * EXCHANGE_RATE : totalActCost;
+  const displayUnit = currencyMode === 'TWD' ? 'NT$' : 'NZ$';
+  statCostCompare.textContent = `${displayUnit} ${displayEstTotal.toLocaleString()} / ${displayUnit} ${displayActTotal.toLocaleString()}`;
 }
 
 function renderOverviewPage() {
@@ -333,6 +339,10 @@ function renderOverviewPage() {
     const countTotal = item.attractions ? item.attractions.length : 0;
     const countVisited = item.attractions ? item.attractions.filter(a => a.visited).length : 0;
 
+    const estCostVal = Number(item.estCost) || 0;
+    const displayCost = currencyMode === 'TWD' ? estCostVal * EXCHANGE_RATE : estCostVal;
+    const displayUnit = currencyMode === 'TWD' ? 'NT$' : 'NZ$';
+
     card.innerHTML = `
       <div class="card-badge">
         <span class="card-badge-lbl">DAY</span>
@@ -344,7 +354,7 @@ function renderOverviewPage() {
       </div>
       <div class="card-indicators">
         <span class="indicator-pill">${countVisited}/${countTotal} 景點</span>
-        <span class="indicator-pill cost">NZ$ ${item.estCost || 0}</span>
+        <span class="indicator-pill cost">${displayUnit} ${displayCost.toLocaleString()}</span>
       </div>
       <i class="fa-solid fa-chevron-right chevron-right-arrow"></i>
     `;
@@ -371,8 +381,16 @@ function renderDetailPage(dayNum) {
   
   detailEstTimeInput.value = dayItem.estDuration || '';
   detailActTimeInput.value = dayItem.actDuration || '';
-  detailEstCostInput.value = dayItem.estCost || 0;
-  detailActCostInput.value = dayItem.actCost || 0;
+
+  // Update labels
+  document.getElementById('label-est-cost').textContent = `預計金額 (${currencyMode === 'TWD' ? 'NT$' : 'NZ$'})`;
+  document.getElementById('label-act-cost').textContent = `實際金額 (${currencyMode === 'TWD' ? 'NT$' : 'NZ$'})`;
+
+  // Populate cost inputs
+  const estCostVal = Number(dayItem.estCost) || 0;
+  const actCostVal = Number(dayItem.actCost) || 0;
+  detailEstCostInput.value = currencyMode === 'TWD' ? Math.round(estCostVal * EXCHANGE_RATE) : estCostVal;
+  detailActCostInput.value = currencyMode === 'TWD' ? Math.round(actCostVal * EXCHANGE_RATE) : actCostVal;
 
   // Render Budget indicator
   renderBudgetStatus(dayItem);
@@ -393,12 +411,15 @@ function renderBudgetStatus(dayItem) {
   
   detailBudgetStatus.classList.add('show');
   const diff = act - est;
+  const displayDiff = currencyMode === 'TWD' ? diff * EXCHANGE_RATE : diff;
+  const displayUnit = currencyMode === 'TWD' ? 'NT$' : 'NZ$';
+  
   if (diff > 0) {
     detailBudgetStatus.classList.add('over');
-    detailBudgetStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> 超出預算 NZ$ ${diff.toLocaleString()}`;
+    detailBudgetStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> 超出預算 ${displayUnit} ${Math.abs(displayDiff).toLocaleString()}`;
   } else if (diff < 0) {
     detailBudgetStatus.classList.add('under');
-    detailBudgetStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> 省下預算 NZ$ ${Math.abs(diff).toLocaleString()}`;
+    detailBudgetStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> 省下預算 ${displayUnit} ${Math.abs(displayDiff).toLocaleString()}`;
   } else {
     detailBudgetStatus.classList.add('under');
     detailBudgetStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> 符合預算範圍`;
@@ -500,8 +521,14 @@ function setupInlineChangeHandlers() {
   detailEstTimeInput.addEventListener('change', () => saveField('estDuration', () => detailEstTimeInput.value));
   detailActTimeInput.addEventListener('change', () => saveField('actDuration', () => detailActTimeInput.value));
   
-  detailEstCostInput.addEventListener('change', () => saveField('estCost', () => Number(detailEstCostInput.value) || 0));
-  detailActCostInput.addEventListener('change', () => saveField('actCost', () => Number(detailActCostInput.value) || 0));
+  detailEstCostInput.addEventListener('change', () => saveField('estCost', () => {
+    const raw = Number(detailEstCostInput.value) || 0;
+    return currencyMode === 'TWD' ? Math.round(raw / EXCHANGE_RATE) : raw;
+  }));
+  detailActCostInput.addEventListener('change', () => saveField('actCost', () => {
+    const raw = Number(detailActCostInput.value) || 0;
+    return currencyMode === 'TWD' ? Math.round(raw / EXCHANGE_RATE) : raw;
+  }));
   
   detailNotesInput.addEventListener('change', () => saveField('notes', () => detailNotesInput.value));
 }
@@ -696,6 +723,34 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 });
 
 // -------------------------------------------------------------
+// CURRENCY SWITCHER
+// -------------------------------------------------------------
+function initCurrencyControl() {
+  const currNzdBtn = document.getElementById('curr-nzd-btn');
+  const currTwdBtn = document.getElementById('curr-twd-btn');
+
+  function switchCurrencyMode(mode) {
+    currencyMode = mode;
+    localStorage.setItem('nz_currency_mode', mode);
+    
+    currNzdBtn.classList.toggle('active', mode === 'NZD');
+    currTwdBtn.classList.toggle('active', mode === 'TWD');
+    
+    renderDashboard();
+    renderOverviewPage();
+    if (currentDay !== null) {
+      renderDetailPage(currentDay);
+    }
+  }
+
+  currNzdBtn.classList.toggle('active', currencyMode === 'NZD');
+  currTwdBtn.classList.toggle('active', currencyMode === 'TWD');
+
+  currNzdBtn.addEventListener('click', () => switchCurrencyMode('NZD'));
+  currTwdBtn.addEventListener('click', () => switchCurrencyMode('TWD'));
+}
+
+// -------------------------------------------------------------
 // STARTUP
 // -------------------------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
@@ -704,6 +759,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setupInlineChangeHandlers();
   switchPage('overview');
   populateMissingDrivingRoutes();
+  initCurrencyControl();
 
   // Force Leaflet to resize correctly on rotating screen (Portrait/Landscape toggle)
   window.addEventListener('resize', () => {
