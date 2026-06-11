@@ -684,16 +684,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   }
 });
 
-// Export JSON
-document.getElementById('export-btn').addEventListener('click', () => {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(itinerary, null, 2));
-  const a = document.createElement('a');
-  a.setAttribute("href", dataStr);
-  a.setAttribute("download", "nz-itinerary-premium.json");
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-});
+
 
 // Import JSON
 document.getElementById('import-file').addEventListener('change', (e) => {
