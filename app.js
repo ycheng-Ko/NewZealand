@@ -751,6 +751,88 @@ function initCurrencyControl() {
 }
 
 // -------------------------------------------------------------
+// WORKSPACE RESIZER / SPLITTER
+// -------------------------------------------------------------
+function initWorkspaceResizer() {
+  const workspace = document.querySelector('.app-workspace');
+  const mapPanel = document.querySelector('.workspace-map-panel');
+  const resizeHandle = document.getElementById('resize-handle');
+
+  let isDragging = false;
+
+  resizeHandle.addEventListener('mousedown', startDrag);
+  resizeHandle.addEventListener('touchstart', startDrag, { passive: true });
+
+  function startDrag(e) {
+    isDragging = true;
+    document.body.style.userSelect = 'none';
+    document.body.classList.add('resizing');
+    
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+  }
+
+  function onDrag(e) {
+    if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+
+    if (isLandscape) {
+      const rect = workspace.getBoundingClientRect();
+      const newWidth = clientX - rect.left;
+      const clampedWidth = Math.max(200, Math.min(newWidth, rect.width - 200));
+      mapPanel.style.width = `${clampedWidth}px`;
+      mapPanel.style.flex = 'none';
+    } else {
+      const rect = workspace.getBoundingClientRect();
+      const newHeight = clientY - rect.top;
+      const clampedHeight = Math.max(150, Math.min(newHeight, rect.height - 150));
+      mapPanel.style.height = `${clampedHeight}px`;
+      mapPanel.style.flex = 'none';
+    }
+
+    if (map) {
+      map.invalidateSize();
+    }
+  }
+
+  function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    document.body.style.userSelect = '';
+    document.body.classList.remove('resizing');
+    
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', endDrag);
+    document.removeEventListener('touchmove', onDrag);
+    document.removeEventListener('touchend', endDrag);
+
+    if (map) {
+      setTimeout(() => { map.invalidateSize(); }, 50);
+    }
+  }
+
+  // Double click reset to original layout
+  resizeHandle.addEventListener('dblclick', resetLayout);
+  resizeHandle.addEventListener('dblclick', resetLayout); // Bind double click
+
+  function resetLayout() {
+    mapPanel.style.width = '';
+    mapPanel.style.height = '';
+    mapPanel.style.flex = '';
+    if (map) {
+      setTimeout(() => { map.invalidateSize(); }, 100);
+    }
+  }
+}
+
+// -------------------------------------------------------------
 // STARTUP
 // -------------------------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
@@ -760,6 +842,7 @@ window.addEventListener('DOMContentLoaded', () => {
   switchPage('overview');
   populateMissingDrivingRoutes();
   initCurrencyControl();
+  initWorkspaceResizer();
 
   // Force Leaflet to resize correctly on rotating screen (Portrait/Landscape toggle)
   window.addEventListener('resize', () => {
