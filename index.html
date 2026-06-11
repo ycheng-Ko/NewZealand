@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="紐西蘭自駕">
-  <link rel="apple-touch-icon" href="icon.png?v=20">
+  <link rel="apple-touch-icon" href="icon.png?v=21">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
   <div class="app-container">
@@ -30,7 +30,7 @@
     <header class="app-header">
       <div class="brand">
         <div class="logo-icon">
-          <img src="icon.png?v=20" alt="Logo">
+          <img src="icon.png?v=21" alt="Logo">
         </div>
         <div class="brand-text">
           <h1>紐西蘭自駕冒險</h1>
@@ -196,8 +196,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="data.js?v=20"></script>
-  <script src="app.js?v=20"></script>
+  <script src="data.js?v=21"></script>
+  <script src="app.js?v=21"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
@@ -206,7 +206,7 @@
         const toast = document.getElementById('pwa-update-toast');
         const updateBtn = document.getElementById('pwa-update-btn');
 
-        navigator.serviceWorker.register('./sw.js?v=20')
+        navigator.serviceWorker.register('./sw.js?v=21')
           .then(reg => {
             reg.update();
             setInterval(() => { reg.update(); }, 15000);

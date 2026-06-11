@@ -73,6 +73,31 @@ let mapLayers = {};
 let activeLayer = 'satellite';
 let routeFeatureGroup;
 
+// Free public Nominatim geocoding helper (looks up coordinates by name in NZ)
+async function geocodeLocation(locationName) {
+  if (!locationName || locationName.trim() === '') return null;
+  // Append New Zealand to scope geocoder results
+  const query = encodeURIComponent(`${locationName.trim()}, New Zealand`);
+  const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+  
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'NZ-RoadTrip-Planner-App/2.0 (ycheng-ko@github)'
+      }
+    });
+    const data = await res.json();
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      return [lat, lon];
+    }
+  } catch (e) {
+    console.error("Geocoding failed for:", locationName, e);
+  }
+  return null;
+}
+
 // Free public OSRM routing helper (supports passing multiple waypoints)
 async function fetchDrivingRoute(coordsArray) {
   if (!coordsArray || coordsArray.length < 2) return null;
@@ -484,7 +509,24 @@ function setupInlineChangeHandlers() {
 async function syncMapPoints() {
   const dayItem = itinerary.find(d => d.day === currentDay);
   if (!dayItem) return;
-  // If user changed names, default coords
+  
+  // Geocode start location if the user changed the text
+  if (dayItem.startLoc) {
+    const coords = await geocodeLocation(dayItem.startLoc);
+    if (coords && isNZCoord(coords)) {
+      dayItem.startCoords = coords;
+    }
+  }
+  
+  // Geocode end location if the user changed the text
+  if (dayItem.endLoc) {
+    const coords = await geocodeLocation(dayItem.endLoc);
+    if (coords && isNZCoord(coords)) {
+      dayItem.endCoords = coords;
+    }
+  }
+
+  // Fallbacks if not valid NZ coords
   if (!isNZCoord(dayItem.startCoords)) {
     dayItem.startCoords = [-43.5321, 172.6362]; // Christchurch
   }
