@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="紐西蘭自駕">
-  <link rel="apple-touch-icon" href="icon.png?v=29">
+  <link rel="apple-touch-icon" href="icon.png?v=30">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,17 +22,17 @@
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
         <div class="logo-icon">
-          <img src="icon.png?v=29" alt="Logo">
+          <img src="icon.png?v=30" alt="Logo">
         </div>
         <div class="brand-text">
-          <h1>紐西蘭自駕冒險 <span class="version-tag">.v29</span></h1>
+          <h1>紐西蘭自駕冒險 <span class="version-tag">.v30</span></h1>
           <p>🇳🇿 NZ RoadTrip Planner 2027</p>
         </div>
       </div>
@@ -198,17 +198,20 @@
     <div class="pwa-toast-content">
       <i class="fa-solid fa-cloud-arrow-down pwa-toast-icon"></i>
       <div class="pwa-toast-text">
-        <h4>發現新版本！</h4>
-        <p>行程工具已更新，立即載入最新功能。</p>
+        <h4 id="pwa-update-title">發現新版本！</h4>
+        <p id="pwa-update-notes">行程工具已更新，立即載入最新功能。</p>
       </div>
     </div>
-    <button id="pwa-update-btn" class="ios-btn ios-btn-primary btn-sm">立即更新</button>
+    <div class="pwa-toast-actions">
+      <button id="pwa-update-btn" class="ios-btn ios-btn-primary btn-sm">要更新</button>
+      <button id="pwa-cancel-btn" class="ios-btn ios-btn-secondary btn-sm">不要更新</button>
+    </div>
   </div>
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="data.js?v=29"></script>
-  <script src="app.js?v=29"></script>
+  <script src="data.js?v=30"></script>
+  <script src="app.js?v=30"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
@@ -216,10 +219,11 @@
         let newWorker;
         const toast = document.getElementById('pwa-update-toast');
         const updateBtn = document.getElementById('pwa-update-btn');
+        const cancelBtn = document.getElementById('pwa-cancel-btn');
         const checkUpdateBtn = document.getElementById('check-update-btn');
         const checkUpdateText = checkUpdateBtn.querySelector('span');
 
-        navigator.serviceWorker.register('./sw.js?v=29')
+        navigator.serviceWorker.register('./sw.js?v=30')
           .then(reg => {
             // Do NOT update automatically on load
             
@@ -227,9 +231,15 @@
               newWorker = reg.installing;
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  toast.classList.add('show');
-                  if (checkUpdateText) checkUpdateText.textContent = '有新版本';
-                  checkUpdateBtn.style.color = 'var(--primary)';
+                  // If update found in background, show the toast with notes
+                  fetch('./version.json?t=' + Date.now())
+                    .then(res => res.json())
+                    .then(verData => {
+                      document.getElementById('pwa-update-notes').innerHTML = `<strong>版本 v${verData.version} 更新內容：</strong><br>${verData.notes}`;
+                      toast.classList.add('show');
+                      if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+                      checkUpdateBtn.style.color = 'var(--primary)';
+                    });
                 }
               });
             });
@@ -237,11 +247,15 @@
             checkUpdateBtn.addEventListener('click', () => {
               if (checkUpdateText) checkUpdateText.textContent = '檢查中...';
               
-              reg.update().then(() => {
-                setTimeout(() => {
-                  if (reg.installing) {
-                    if (checkUpdateText) checkUpdateText.textContent = '下載中...';
-                  } else if (reg.waiting) {
+              // 1. Fetch version.json to check what's new
+              fetch('./version.json?t=' + Date.now())
+                .then(res => res.json())
+                .then(verData => {
+                  const latestVer = Number(verData.version) || 0;
+                  const currentVer = 29; // Hardcoded current version to detect latestVer (30)
+                  
+                  if (latestVer > currentVer) {
+                    document.getElementById('pwa-update-notes').innerHTML = `<strong>版本 v${verData.version} 更新內容：</strong><br>${verData.notes}`;
                     toast.classList.add('show');
                     if (checkUpdateText) checkUpdateText.textContent = '有新版本';
                     checkUpdateBtn.style.color = 'var(--primary)';
@@ -251,28 +265,69 @@
                       if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
                     }, 2000);
                   }
-                }, 1000);
-              }).catch(err => {
-                console.error("Update check failed:", err);
-                if (checkUpdateText) checkUpdateText.textContent = '檢查失敗';
-                setTimeout(() => {
-                  if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
-                }, 2000);
-              });
+                })
+                .catch(err => {
+                  console.error("Failed to check version.json, falling back to reg.update() directly:", err);
+                  reg.update().then(() => {
+                    setTimeout(() => {
+                      if (reg.installing) {
+                        if (checkUpdateText) checkUpdateText.textContent = '下載中...';
+                      } else if (reg.waiting) {
+                        toast.classList.add('show');
+                        if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+                      } else {
+                        if (checkUpdateText) checkUpdateText.textContent = '已是最新';
+                        setTimeout(() => {
+                          if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
+                        }, 2000);
+                      }
+                    }, 1000);
+                  });
+                });
             });
           });
 
         navigator.serviceWorker.ready.then(reg => {
           if (reg.waiting) {
-            toast.classList.add('show');
-            if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+            fetch('./version.json?t=' + Date.now())
+              .then(res => res.json())
+              .then(verData => {
+                document.getElementById('pwa-update-notes').innerHTML = `<strong>版本 v${verData.version} 更新內容：</strong><br>${verData.notes}`;
+                toast.classList.add('show');
+                if (checkUpdateText) checkUpdateText.textContent = '有新版本';
+              });
           }
         });
 
+        // User clicked "要更新" (Update)
         updateBtn.addEventListener('click', () => {
+          if (checkUpdateText) checkUpdateText.textContent = '更新中...';
           navigator.serviceWorker.getRegistration().then(reg => {
-            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            // Trigger actual update
+            reg.update().then(() => {
+              const checkInstalled = () => {
+                if (reg.waiting) {
+                  reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                } else if (reg.installing) {
+                  reg.installing.addEventListener('statechange', (e) => {
+                    if (e.target.state === 'installed') {
+                      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                  });
+                } else {
+                  setTimeout(checkInstalled, 300);
+                }
+              };
+              checkInstalled();
+            });
           });
+        });
+
+        // User clicked "不要更新" (Cancel)
+        cancelBtn.addEventListener('click', () => {
+          toast.classList.remove('show');
+          if (checkUpdateText) checkUpdateText.textContent = '檢查更新';
+          checkUpdateBtn.style.color = '';
         });
 
         let refreshing = false;
