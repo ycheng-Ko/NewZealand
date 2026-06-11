@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="紐西蘭自駕">
-  <link rel="apple-touch-icon" href="icon.png?v=32">
+  <link rel="apple-touch-icon" href="icon.png?v=33">
   
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,17 +22,17 @@
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
       <div class="brand">
         <div class="logo-icon">
-          <img src="icon.png?v=32" alt="Logo">
+          <img src="icon.png?v=33" alt="Logo">
         </div>
         <div class="brand-text">
-          <h1>紐西蘭自駕冒險 <span class="version-tag">.v32</span></h1>
+          <h1>紐西蘭自駕冒險 <span class="version-tag">.v33</span></h1>
           <p>🇳🇿 NZ RoadTrip Planner 2027</p>
         </div>
       </div>
@@ -218,8 +218,8 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="data.js?v=32"></script>
-  <script src="app.js?v=32"></script>
+  <script src="data.js?v=33"></script>
+  <script src="app.js?v=33"></script>
   
   <script>
     if ('serviceWorker' in navigator) {
@@ -231,7 +231,7 @@
         const checkUpdateBtn = document.getElementById('check-update-btn');
         const checkUpdateText = checkUpdateBtn.querySelector('span');
  
-        navigator.serviceWorker.register('./sw.js?v=32')
+        navigator.serviceWorker.register('./sw.js?v=33')
           .then(reg => {
             // Do NOT update automatically on load
             
@@ -260,7 +260,7 @@
                 .then(res => res.json())
                 .then(verData => {
                   const latestVer = Number(verData.version) || 0;
-                  const currentVer = 31; // Hardcoded current version to detect latestVer (32)
+                  const currentVer = 32; // Hardcoded current version to detect latestVer (33)
                   
                   if (latestVer > currentVer) {
                     document.getElementById('pwa-update-notes').innerHTML = `<strong>版本 v${verData.version} 更新內容：</strong><br>${verData.notes}`;

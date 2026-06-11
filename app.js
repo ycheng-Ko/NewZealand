@@ -409,6 +409,26 @@ function renderDetailPage(dayNum) {
   document.getElementById('detail-calc-distance').textContent = formatCalcDistance(dayItem.routeDistance);
   document.getElementById('detail-calc-duration').textContent = formatCalcDuration(dayItem.routeDuration);
 
+  // On-demand fetch if missing
+  if (isNZCoord(dayItem.startCoords) && isNZCoord(dayItem.endCoords) && (dayItem.routeDistance === undefined || dayItem.routeDistance === null)) {
+    fetchDrivingRoute([dayItem.startCoords, dayItem.endCoords]).then(res => {
+      if (res) {
+        dayItem.routeCoords = res.coordinates;
+        dayItem.routeDistance = res.distance;
+        dayItem.routeDuration = res.duration;
+        saveItinerary();
+        updateMap();
+        
+        if (currentDay === dayItem.day) {
+          const distEl = document.getElementById('detail-calc-distance');
+          const durEl = document.getElementById('detail-calc-duration');
+          if (distEl) distEl.textContent = formatCalcDistance(dayItem.routeDistance);
+          if (durEl) durEl.textContent = formatCalcDuration(dayItem.routeDuration);
+        }
+      }
+    });
+  }
+
   // Update labels
   document.getElementById('label-est-cost').textContent = `預計金額 (${currencyMode === 'TWD' ? 'NT$' : 'NZ$'})`;
   document.getElementById('label-act-cost').textContent = `實際金額 (${currencyMode === 'TWD' ? 'NT$' : 'NZ$'})`;
