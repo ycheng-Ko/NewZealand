@@ -113,9 +113,14 @@ async function fetchDrivingRoute(coordsArray) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-      const geojsonCoords = data.routes[0].geometry.coordinates; // array of [lng, lat]
+      const routeData = data.routes[0];
+      const geojsonCoords = routeData.geometry.coordinates; // array of [lng, lat]
       // Convert to [lat, lng] for Leaflet
-      return geojsonCoords.map(coord => [coord[1], coord[0]]);
+      return {
+        coordinates: geojsonCoords.map(coord => [coord[1], coord[0]]),
+        distance: routeData.distance, // meters
+        duration: routeData.duration  // seconds
+      };
     }
   } catch (e) {
     console.error("Failed to fetch driving route from OSRM:", e);
@@ -132,11 +137,13 @@ async function populateMissingDrivingRoutes() {
     const baseCoords = (item.routeCoords && item.routeCoords.length > 0) ? item.routeCoords : [item.startCoords, item.endCoords];
     const validNZCoords = baseCoords.filter(c => isNZCoord(c));
     
-    if (validNZCoords.length >= 2 && (!item.routeCoords || item.routeCoords.length < 15)) {
+    if (validNZCoords.length >= 2 && (!item.routeCoords || item.routeCoords.length < 15 || item.routeDistance === undefined)) {
       console.log(`Busting and fetching high-detail driving route for Day ${item.day}...`);
-      const route = await fetchDrivingRoute(validNZCoords);
-      if (route) {
-        item.routeCoords = route;
+      const routeResult = await fetchDrivingRoute(validNZCoords);
+      if (routeResult) {
+        item.routeCoords = routeResult.coordinates;
+        item.routeDistance = routeResult.distance;
+        item.routeDuration = routeResult.duration;
         updated = true;
         // Delay to prevent rate-limiting on open source routing servers
         await new Promise(r => setTimeout(r, 600));
@@ -364,6 +371,22 @@ function renderOverviewPage() {
   });
 }
 
+function formatCalcDuration(seconds) {
+  if (seconds === undefined || seconds === null) return "-";
+  const mins = Math.round(seconds / 60);
+  const hrs = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  if (hrs > 0) {
+    return `${hrs} 小時 ${remainingMins} 分鐘`;
+  }
+  return `${mins} 分鐘`;
+}
+
+function formatCalcDistance(meters) {
+  if (meters === undefined || meters === null) return "-";
+  return `${(meters / 1000).toFixed(1)} 公里`;
+}
+
 function renderDetailPage(dayNum) {
   const dayItem = itinerary.find(d => d.day === dayNum);
   if (!dayItem) {
@@ -381,6 +404,10 @@ function renderDetailPage(dayNum) {
   
   detailEstTimeInput.value = dayItem.estDuration || '';
   detailActTimeInput.value = dayItem.actDuration || '';
+
+  // Populate map calculation metrics
+  document.getElementById('detail-calc-distance').textContent = formatCalcDistance(dayItem.routeDistance);
+  document.getElementById('detail-calc-duration').textContent = formatCalcDuration(dayItem.routeDuration);
 
   // Update labels
   document.getElementById('label-est-cost').textContent = `預計金額 (${currencyMode === 'TWD' ? 'NT$' : 'NZ$'})`;
@@ -561,10 +588,21 @@ async function syncMapPoints() {
     dayItem.endCoords = [-44.0047, 170.4771]; // Tekapo
   }
   
-  const route = await fetchDrivingRoute([dayItem.startCoords, dayItem.endCoords]);
-  dayItem.routeCoords = route ? route : [dayItem.startCoords, dayItem.endCoords];
+  const routeResult = await fetchDrivingRoute([dayItem.startCoords, dayItem.endCoords]);
+  if (routeResult) {
+    dayItem.routeCoords = routeResult.coordinates;
+    dayItem.routeDistance = routeResult.distance;
+    dayItem.routeDuration = routeResult.duration;
+  } else {
+    dayItem.routeCoords = [dayItem.startCoords, dayItem.endCoords];
+    dayItem.routeDistance = null;
+    dayItem.routeDuration = null;
+  }
   saveItinerary();
   updateMap();
+  if (currentDay === dayItem.day) {
+    renderDetailPage(currentDay);
+  }
 }
 
 // Add New Attraction

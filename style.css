@@ -1067,3 +1067,10 @@ body {
   }
 }
 
+.calc-metric-value {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: var(--primary) !important;
+  text-align: right;
+}
+
